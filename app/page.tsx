@@ -80,6 +80,7 @@ verankerd in tijd`}</pre>
 
         {mode === 'url' ? (
           <input
+            key="url-input"
             type="url"
             placeholder="https://..."
             value={url}
@@ -88,6 +89,7 @@ verankerd in tijd`}</pre>
           />
         ) : (
           <input
+            key="file-input"
             type="file"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             required

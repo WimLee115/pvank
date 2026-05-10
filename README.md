@@ -8,6 +8,12 @@
 
 **Cryptografisch bewijs voor elke Nederlander**
 
+[![License](https://img.shields.io/badge/License-AGPL_3.0-FF6B35?style=flat-square)](LICENSE)
+[![Version](https://img.shields.io/badge/version-0.4.0-0b7fdb?style=flat-square)](https://github.com/WimLee115/pvank/releases)
+[![Made in NL](https://img.shields.io/badge/Made_in-NL-FF4500?style=flat-square)](https://github.com/WimLee115)
+[![Privacy First](https://img.shields.io/badge/Privacy-First-00FF41?style=flat-square)](#)
+[![OpenTimestamps](https://img.shields.io/badge/OpenTimestamps-Bitcoin-7C3AED?style=flat-square)](https://opentimestamps.org)
+
 </div>
 
 ---
@@ -36,6 +42,29 @@ pvank-bewijs.zip
 ```bash
 pip install opentimestamps-client
 ots verify manifest.json.ots
+```
+
+## Interface
+
+```text
+┌─────────────────────────────────────────────────────┐
+│                                                     │
+│  ░▒▓ PVANK ▓▒░                                      │
+│  verankerd in tijd                                  │
+│                                                     │
+│  Cryptografisch bewijs voor elke Nederlander.       │
+│  SHA-256 + OpenTimestamps op de Bitcoin-blockchain. │
+│                                                     │
+│  ┌── wat verankeren? ──────────────────────────┐    │
+│  │  ⊙ een webpagina      ○ een bestand         │    │
+│  └─────────────────────────────────────────────┘    │
+│                                                     │
+│  [ https://...                                  ]   │
+│                                                     │
+│  [▒▒ ANKER NEERLATEN ▒▒]                            │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+   zwart fond · JetBrains Mono · bloedoranje accent
 ```
 
 ## Waarom
@@ -97,19 +126,21 @@ Het stuk dat OTS-stamped wordt is uitsluitend `SHA-256(manifest.json)`. De manif
 
 ## Status
 
-`v0.3` — werkt voor URL's en bestand-uploads. Bij URL's verzamelt PVANK
+`v0.4` — werkt voor URL's en bestand-uploads. Bij URL's verzamelt PVANK
 publieke context (WHOIS · DNS · TLS-cert) plus auto-extractie van
-Nederlandse entiteit-hints (KvK · BTW · IBAN) uit de HTML.
+Nederlandse entiteit-hints (KvK · BTW · IBAN). `verify.html` parseert
+OTS-receipts en checkt of de stamped hash gelijk is aan SHA-256(manifest)
+— allemaal in de browser, zonder CLI.
 
 Nog te doen:
 
+- [ ] Volledige Bitcoin block-header verify in browser (zware lift)
 - [ ] KvK-API-koppeling voor authoritative bedrijfsinfo (key required)
 - [ ] Browser-extensie ("verzegel deze pagina")
 - [ ] Mobile / PWA met camera-import (foto's instant verzegelen)
 - [ ] Bulk-mode voor advocaten / journalisten
 - [ ] Optionele Tor-fetch voor anoniem snapshotten
 - [ ] EML-import voor e-mail-bewijs
-- [ ] In-browser OTS-verify in `verify.html` (geen CLI meer nodig)
 
 ## Brand
 

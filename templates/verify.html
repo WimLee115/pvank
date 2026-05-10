@@ -60,29 +60,35 @@ PVANK · controleer dit bewijs</pre>
 
 <p>
   Sleep <em>alle</em> bestanden uit dit <code>pvank-bewijs.zip</code> naar het vak
-  hieronder. Elke hash wordt opnieuw berekend in je browser en vergeleken met
-  <code>manifest.json</code>. Geen server, geen cloud — pure browser-crypto.
+  hieronder. Hashes worden in je browser herberekend en vergeleken met
+  <code>manifest.json</code>. De OTS-receipt wordt geparseerd en gekoppeld
+  aan de manifest-hash. Geen server, geen cloud — pure browser-crypto.
 </p>
 
 <div id="drop" class="drop">[ drop bestanden hier ]</div>
 
-<h2>Status</h2>
+<h2>Hash-controle</h2>
 <pre id="status" class="box pending">[ wachten op bestanden ]</pre>
+
+<h2>OpenTimestamps-receipt</h2>
+<pre id="ots" class="box pending">[ drop manifest.json.ots om te parseren ]</pre>
 
 <h2>Manifest</h2>
 <pre id="manifest" class="box pending">[ drop manifest.json om te tonen ]</pre>
 
-<h2>OpenTimestamps · blockchain</h2>
+<h2>Bitcoin-bevestiging</h2>
 <p>
-  Verifieer de tijdstempel via de officiële OTS-client:
+  De OTS-receipt bevat het bewijs dat dit document op een specifieke datum bestond.
+  Voor volledige verificatie van het Bitcoin-blok waarin de stamp uiteindelijk
+  is opgenomen heb je de officiële OTS-client of de browser-tool nodig:
 </p>
 <pre class="box">pip install opentimestamps-client
 ots verify manifest.json.ots</pre>
 <p>
-  Of via de browser-tool op
-  <a href="https://opentimestamps.org" target="_blank" rel="noopener">opentimestamps.org</a>.
-  De timestamp is pas Bitcoin-bevestigd nadat een blok mined is — kan tot enkele
-  uren duren. Tot die tijd is de receipt "pending".
+  Of upload <code>manifest.json.ots</code> samen met <code>manifest.json</code>
+  op <a href="https://opentimestamps.org" target="_blank" rel="noopener">opentimestamps.org</a>.
+  Tot een Bitcoin-blok de stamp absorbeert (gewoonlijk binnen enkele uren) blijft
+  de status "pending".
 </p>
 
 <div class="footer">
@@ -93,9 +99,12 @@ ots verify manifest.json.ots</pre>
 <script>
   const dropEl = document.getElementById('drop');
   const statusEl = document.getElementById('status');
+  const otsEl = document.getElementById('ots');
   const manifestEl = document.getElementById('manifest');
 
   let manifest = null;
+  let manifestHash = null;
+  let otsInfo = null;
   const seen = new Map();
 
   ['dragenter', 'dragover'].forEach((ev) => {
@@ -113,19 +122,31 @@ ots verify manifest.json.ots</pre>
     for (const file of e.dataTransfer.files) {
       const buf = await file.arrayBuffer();
       const hash = await sha256Hex(buf);
+
       if (file.name === 'manifest.json') {
         try {
           manifest = JSON.parse(new TextDecoder().decode(buf));
+          manifestHash = hash;
           manifestEl.textContent = JSON.stringify(manifest, null, 2);
           manifestEl.className = 'box ok';
         } catch (err) {
           manifestEl.textContent = 'kon manifest.json niet parsen: ' + err.message;
           manifestEl.className = 'box bad';
         }
+      } else if (file.name.endsWith('.ots')) {
+        try {
+          otsInfo = parseOts(new Uint8Array(buf));
+          renderOts();
+        } catch (err) {
+          otsEl.textContent = 'kon OTS-receipt niet parseren: ' + err.message;
+          otsEl.className = 'box bad';
+        }
       } else {
         seen.set(file.name, hash);
       }
+
       render();
+      renderOts();
     }
   });
 
@@ -134,6 +155,54 @@ ots verify manifest.json.ots</pre>
     return Array.from(new Uint8Array(h))
       .map((b) => b.toString(16).padStart(2, '0'))
       .join('');
+  }
+
+  // OTS magic header — eerste 31 bytes:
+  // 0x00 + "OpenTimestamps" + 0x00 0x00 + "Proof" + 0x00 + 0xbf 0x89 0xe2 0xe8 0x84 0xe8 0x92 0x94
+  const OTS_MAGIC = new Uint8Array([
+    0x00, 0x4f, 0x70, 0x65, 0x6e, 0x54, 0x69, 0x6d, 0x65, 0x73,
+    0x74, 0x61, 0x6d, 0x70, 0x73, 0x00, 0x00, 0x50, 0x72, 0x6f,
+    0x6f, 0x66, 0x00, 0xbf, 0x89, 0xe2, 0xe8, 0x84, 0xe8, 0x92, 0x94,
+  ]);
+
+  function parseOts(bytes) {
+    if (bytes.length < OTS_MAGIC.length + 2 + 32) {
+      throw new Error('te kort voor een OTS-bestand');
+    }
+    for (let i = 0; i < OTS_MAGIC.length; i++) {
+      if (bytes[i] !== OTS_MAGIC[i]) throw new Error('OTS magic-bytes kloppen niet');
+    }
+    const version = bytes[OTS_MAGIC.length];
+    const hashOpByte = bytes[OTS_MAGIC.length + 1];
+
+    const hashOpName =
+      hashOpByte === 0x02 ? 'SHA-1'
+      : hashOpByte === 0x03 ? 'RIPEMD-160'
+      : hashOpByte === 0x08 ? 'SHA-256'
+      : hashOpByte === 0x67 ? 'KECCAK-256'
+      : `0x${hashOpByte.toString(16)} (onbekend)`;
+
+    if (hashOpByte !== 0x08) {
+      throw new Error('alleen SHA-256-receipts worden ondersteund (deze gebruikt ' + hashOpName + ')');
+    }
+
+    const digest = bytes.slice(OTS_MAGIC.length + 2, OTS_MAGIC.length + 2 + 32);
+    const digestHex = Array.from(digest).map((b) => b.toString(16).padStart(2, '0')).join('');
+
+    // Heuristisch: zoek calendar-URL's. PendingAttestation tag = 0x83dfe30d 2ef90c8e
+    // Extracten zonder volledige tree-walk: scan op ASCII-substrings die op http(s):// beginnen.
+    const text = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+    const calendarRegex = /https?:\/\/[A-Za-z0-9.\-]+\/?/g;
+    const calendars = [...new Set(Array.from(text.matchAll(calendarRegex)).map((m) => m[0].replace(/\/$/, '')))]
+      .filter((u) => /calendar|opentimestamps/i.test(u));
+
+    return {
+      version,
+      hashOp: hashOpName,
+      digestHex,
+      calendars,
+      sizeBytes: bytes.length,
+    };
   }
 
   function render() {
@@ -165,10 +234,43 @@ ots verify manifest.json.ots</pre>
     }
     if (okAll && lines.length) {
       lines.push('');
-      lines.push('alle hashes kloppen. tijdstempel nog te checken via ots-client.');
+      lines.push('alle hashes kloppen.');
     }
     statusEl.textContent = lines.join('\n');
     statusEl.className = 'box ' + (okAll ? 'ok' : 'pending');
+  }
+
+  function renderOts() {
+    if (!otsInfo) {
+      otsEl.textContent = '[ drop manifest.json.ots om te parseren ]';
+      otsEl.className = 'box pending';
+      return;
+    }
+    const lines = [];
+    lines.push('[ OK ] OTS-magic herkend');
+    lines.push('       formaat-versie:   ' + otsInfo.version);
+    lines.push('       hash-algoritme:   ' + otsInfo.hashOp);
+    lines.push('       gestempelde hash: ' + otsInfo.digestHex);
+    lines.push('       calendar-servers: ' + (otsInfo.calendars.length ? otsInfo.calendars.join(', ') : '(geen gevonden)'));
+    lines.push('       grootte:          ' + otsInfo.sizeBytes + ' bytes');
+    lines.push('');
+
+    if (manifestHash) {
+      if (otsInfo.digestHex.toLowerCase() === manifestHash.toLowerCase()) {
+        lines.push('[ OK ] de OTS-receipt is over EXACT deze manifest.json');
+        lines.push('       SHA-256(manifest.json) == OTS-digest');
+        otsEl.className = 'box ok';
+      } else {
+        lines.push('[ X ] DE OTS-RECEIPT IS NIET OVER DEZE MANIFEST');
+        lines.push('       SHA-256(manifest.json): ' + manifestHash);
+        lines.push('       OTS-digest:             ' + otsInfo.digestHex);
+        otsEl.className = 'box bad';
+      }
+    } else {
+      lines.push('[ ? ] drop manifest.json om te koppelen aan deze receipt');
+      otsEl.className = 'box pending';
+    }
+    otsEl.textContent = lines.join('\n');
   }
 </script>
 

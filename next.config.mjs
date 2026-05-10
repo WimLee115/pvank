@@ -3,7 +3,7 @@ const config = {
   experimental: {
     serverActions: { bodySizeLimit: '50mb' },
   },
-  serverExternalPackages: ['playwright', 'archiver', 'javascript-opentimestamps'],
+  serverExternalPackages: ['playwright', 'archiver'],
 };
 
 export default config;

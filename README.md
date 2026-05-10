@@ -54,6 +54,7 @@ PVANK sluit dat gat. Gratis. Open. Auditeerbaar.
 ## Quick start
 
 ```bash
+pip install opentimestamps-client     # de officiële `ots` CLI
 pnpm install
 pnpm playwright install chromium
 pnpm dev
@@ -65,9 +66,14 @@ Open `http://localhost:3000`.
 
 - **Next.js 15** + App Router + TypeScript strict
 - **Playwright** voor server-side snapshots (incl. JS-rendered pagina's)
-- **`javascript-opentimestamps`** voor OTS-stamping
+- **`opentimestamps-client`** (Python, canonical) — via subprocess `ots stamp`
 - **`archiver`** voor ZIP-output
 - **Web Crypto API** voor browser-side hash-verificatie in `verify.html`
+
+PVANK gebruikt bewust de officiële Python `ots`-client en niet de oude
+`javascript-opentimestamps` npm-package — die laatste sleept `request@2.x` en
+`bitcore-lib@8.14` mee, met >10 critical CVE's. Bewijs-software verdraagt geen
+oude transitives.
 
 ## Architectuur
 

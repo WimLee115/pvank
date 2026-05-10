@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Snapshot } from './snapshot';
 import { sha256, sha256Hex } from './hash';
-import { stampOts } from './ots';
+import { stampOtsForData } from './ots';
 
 export interface UrlInput {
   kind: 'url';
@@ -72,7 +72,7 @@ export async function buildBundle(input: BundleInput): Promise<BundleResult> {
 
   let ots: Buffer;
   try {
-    ots = await stampOts(ankerHash);
+    ots = await stampOtsForData(manifestJson);
   } catch (err) {
     throw new Error(
       'OTS-stamping mislukt (calendar-server onbereikbaar?): ' +

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { snapshotUrl } from '@/lib/snapshot';
+import { gatherTegenpartij } from '@/lib/tegenpartij';
 import { buildBundle } from '@/lib/bundle';
 
 export const runtime = 'nodejs';
@@ -27,8 +28,16 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const snapshot = await snapshotUrl(url);
-      const { zip } = await buildBundle({ kind: 'url', url, snapshot });
+      const [snapshot, tegenpartij] = await Promise.all([
+        snapshotUrl(url),
+        gatherTegenpartij(url),
+      ]);
+      const { zip } = await buildBundle({
+        kind: 'url',
+        url,
+        snapshot,
+        tegenpartij,
+      });
       return new NextResponse(new Uint8Array(zip), {
         headers: {
           'Content-Type': 'application/zip',

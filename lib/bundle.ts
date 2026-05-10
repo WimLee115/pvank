@@ -2,6 +2,7 @@ import archiver from 'archiver';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Snapshot } from './snapshot';
+import type { TegenpartijInfo } from './tegenpartij';
 import { sha256, sha256Hex } from './hash';
 import { stampOtsForData } from './ots';
 
@@ -9,6 +10,7 @@ export interface UrlInput {
   kind: 'url';
   url: string;
   snapshot: Snapshot;
+  tegenpartij: TegenpartijInfo;
 }
 
 export interface FileInput {
@@ -44,6 +46,10 @@ export async function buildBundle(input: BundleInput): Promise<BundleResult> {
       ),
       'utf8'
     );
+    items['tegenpartij.json'] = Buffer.from(
+      JSON.stringify(input.tegenpartij, null, 2),
+      'utf8'
+    );
   } else {
     items[input.filename] = input.buf;
   }
@@ -53,7 +59,7 @@ export async function buildBundle(input: BundleInput): Promise<BundleResult> {
   );
 
   const manifest = {
-    pvank: '0.1',
+    pvank: '0.2',
     kind: input.kind,
     capturedAt: new Date().toISOString(),
     source:

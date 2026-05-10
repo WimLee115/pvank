@@ -25,7 +25,7 @@ pvank-bewijs.zip
 ├── snapshot.html       — origineel HTML (URL-modus) of jouw bestand
 ├── snapshot.png        — full-page screenshot (URL-modus)
 ├── headers.json        — HTTP-headers + final URL (URL-modus)
-├── tegenpartij.json    — WHOIS · DNS (A/AAAA/NS/MX/TXT) · TLS-cert (URL-modus)
+├── tegenpartij.json    — WHOIS · DNS (A/AAAA/NS/MX/TXT) · TLS-cert · NL-hints (KvK/BTW/IBAN)
 ├── manifest.json       — alle hashes + metadata + tijdstempel
 ├── manifest.json.ots   — OpenTimestamps-receipt (Bitcoin-blockchain)
 └── verify.html         — open in elke browser, controleer alles
@@ -97,10 +97,13 @@ Het stuk dat OTS-stamped wordt is uitsluitend `SHA-256(manifest.json)`. De manif
 
 ## Status
 
-`v0.2` — werkt voor URL's en bestand-uploads, inclusief WHOIS / DNS / TLS-cert
-van de tegenpartij. Nog te doen:
+`v0.3` — werkt voor URL's en bestand-uploads. Bij URL's verzamelt PVANK
+publieke context (WHOIS · DNS · TLS-cert) plus auto-extractie van
+Nederlandse entiteit-hints (KvK · BTW · IBAN) uit de HTML.
 
-- [ ] Handelsregister (KvK-nummer extractie + opzoeking)
+Nog te doen:
+
+- [ ] KvK-API-koppeling voor authoritative bedrijfsinfo (key required)
 - [ ] Browser-extensie ("verzegel deze pagina")
 - [ ] Mobile / PWA met camera-import (foto's instant verzegelen)
 - [ ] Bulk-mode voor advocaten / journalisten

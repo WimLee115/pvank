@@ -18,6 +18,12 @@ export interface TlsInfo {
   fingerprintSha256: string;
 }
 
+export interface DutchEntityHints {
+  kvkNumbers: string[];
+  btwNumbers: string[];
+  ibans: string[];
+}
+
 export interface TegenpartijInfo {
   hostname: string;
   protocol: string;
@@ -25,6 +31,7 @@ export interface TegenpartijInfo {
   whois: string | null;
   dnsRecords: DnsRecords;
   tlsCertificate: TlsInfo | null;
+  dutchEntityHints?: DutchEntityHints;
   notes: string[];
 }
 
@@ -75,6 +82,47 @@ export async function gatherTegenpartij(url: string): Promise<TegenpartijInfo> {
     dnsRecords,
     tlsCertificate: tls,
     notes,
+  };
+}
+
+/**
+ * Doorzoek HTML op Nederlandse entiteit-identifiers:
+ * KvK-nummer (8 cijfers, met label), BTW-nummer (NL...B..), IBAN (NL..AAAA..).
+ *
+ * Hints, geen claims — false positives kunnen voorkomen op pathological pagina's.
+ * Bedoeld als startpunt voor handmatige verificatie via KvK / Belastingdienst.
+ */
+export function extractDutchEntityHints(html: string): DutchEntityHints {
+  const text = html
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&');
+
+  const kvkRegex =
+    /\b(?:KvK|KVK|Kamer\s+van\s+Koophandel|Handelsregister)[\s.:\-]*(?:nr\.?|nummer|#|no\.?)?[\s.:\-]*(\d{8})\b/gi;
+  const btwRegex = /\bNL[\s.]?(\d{9})[\s.]?B[\s.]?(\d{2})\b/gi;
+  const ibanRegex = /\bNL(\d{2})[\s.]?([A-Z]{4})[\s.]?((?:\d[\s.]?){10})\b/gi;
+
+  const kvkSet = new Set<string>();
+  for (const m of text.matchAll(kvkRegex)) kvkSet.add(m[1]);
+
+  const btwSet = new Set<string>();
+  for (const m of text.matchAll(btwRegex)) {
+    btwSet.add(`NL${m[1]}B${m[2]}`);
+  }
+
+  const ibanSet = new Set<string>();
+  for (const m of text.matchAll(ibanRegex)) {
+    const digits = m[3].replace(/[\s.]/g, '');
+    ibanSet.add(`NL${m[1]}${m[2]}${digits}`);
+  }
+
+  return {
+    kvkNumbers: [...kvkSet].sort(),
+    btwNumbers: [...btwSet].sort(),
+    ibans: [...ibanSet].sort(),
   };
 }
 

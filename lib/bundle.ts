@@ -59,7 +59,7 @@ export async function buildBundle(input: BundleInput): Promise<BundleResult> {
   );
 
   const manifest = {
-    pvank: '0.2',
+    pvank: '0.3',
     kind: input.kind,
     capturedAt: new Date().toISOString(),
     source:

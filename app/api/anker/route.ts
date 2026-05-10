@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { snapshotUrl } from '@/lib/snapshot';
-import { gatherTegenpartij } from '@/lib/tegenpartij';
+import { gatherTegenpartij, extractDutchEntityHints } from '@/lib/tegenpartij';
 import { buildBundle } from '@/lib/bundle';
 
 export const runtime = 'nodejs';
@@ -28,10 +28,14 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const [snapshot, tegenpartij] = await Promise.all([
+      const [snapshot, tegenpartijBase] = await Promise.all([
         snapshotUrl(url),
         gatherTegenpartij(url),
       ]);
+      const tegenpartij = {
+        ...tegenpartijBase,
+        dutchEntityHints: extractDutchEntityHints(snapshot.html),
+      };
       const { zip } = await buildBundle({
         kind: 'url',
         url,

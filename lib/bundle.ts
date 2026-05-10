@@ -62,8 +62,8 @@ export async function buildBundle(input: BundleInput): Promise<BundleResult> {
         : { filename: input.filename, size: input.buf.byteLength },
     contents,
     note:
-      'manifest.ots is een OpenTimestamps-receipt over SHA-256(manifest.json). ' +
-      'Verifieer met: ots verify manifest.ots manifest.json',
+      'manifest.json.ots is een OpenTimestamps-receipt over SHA-256(manifest.json). ' +
+      'Verifieer met: ots verify manifest.json.ots',
   };
 
   const manifestJson = Buffer.from(JSON.stringify(manifest, null, 2), 'utf8');
@@ -102,7 +102,7 @@ export async function buildBundle(input: BundleInput): Promise<BundleResult> {
     archive.append(buf, { name });
   }
   archive.append(manifestJson, { name: 'manifest.json' });
-  archive.append(ots, { name: 'manifest.ots' });
+  archive.append(ots, { name: 'manifest.json.ots' });
   if (verifyHtml) {
     archive.append(verifyHtml, { name: 'verify.html' });
   }

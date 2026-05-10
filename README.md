@@ -26,7 +26,7 @@ pvank-bewijs.zip
 ├── snapshot.png        — full-page screenshot (URL-modus)
 ├── headers.json        — HTTP-headers + final URL (URL-modus)
 ├── manifest.json       — alle hashes + metadata + tijdstempel
-├── manifest.ots        — OpenTimestamps-receipt (Bitcoin-blockchain)
+├── manifest.json.ots   — OpenTimestamps-receipt (Bitcoin-blockchain)
 └── verify.html         — open in elke browser, controleer alles
 ```
 
@@ -34,7 +34,7 @@ pvank-bewijs.zip
 
 ```bash
 pip install opentimestamps-client
-ots verify manifest.ots manifest.json
+ots verify manifest.json.ots
 ```
 
 ## Waarom

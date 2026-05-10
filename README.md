@@ -6,7 +6,7 @@
    verankerd in tijd
 ```
 
-**Cryptografisch bewijs voor elke Nederlander**
+**Cryptografisch bewijs voor iedereen**
 
 [![License](https://img.shields.io/badge/License-AGPL_3.0-FF6B35?style=flat-square)](LICENSE)
 [![Version](https://img.shields.io/badge/version-0.4.0-0b7fdb?style=flat-square)](https://github.com/WimLee115/pvank/releases)
